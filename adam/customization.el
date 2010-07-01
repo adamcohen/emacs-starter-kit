@@ -62,3 +62,6 @@
 ;; (add-to-list 'load-path "~/.emacs.d/adam/autopair.el") ;; comment if autopair.el is in standard load path 
 ;; (require 'autopair)
 ;; (autopair-global-mode) ;; enable autopair in all buffers 
+
+(when (require 'browse-kill-ring nil 'noerror)
+  (browse-kill-ring-default-keybindings))

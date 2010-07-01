@@ -162,7 +162,7 @@
   (beginning-of-line) (setq start (point))
   (end-of-line) (forward-char) (setq end (point))
   (let ((line-text (delete-and-extract-region start end)))
-    (forward-line n)
+n    (forward-line n)
     (insert line-text)
     ;; restore point to original column in moved line
     (forward-line -1)
@@ -217,3 +217,11 @@
                 (shell-command-history    . 50)
                 tags-file-name
                 register-alist)))
+
+
+(defun log-through-rails ()
+  (interactive)
+  "insert log message containing clipboard contents"
+  (insert  (concat (concat (concat "logger.warn(%|" (car kill-ring)) ": #{") (car kill-ring) "}|)")))
+
+(global-set-key (kbd "C-c C-j") 'log-through-rails)
