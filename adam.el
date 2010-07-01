@@ -1,6 +1,9 @@
 ;start the emacsclient server
 (server-start)
 
+;remove annoying "Buffer `buffername' still has clients; kill it?" message
+(remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
+
 (setq 
   ido-save-directory-list-file "~/.emacs.d/cache/ido.last"
   ido-ignore-buffers ;; ignore these guys
@@ -146,6 +149,7 @@
 (global-set-key [f6] 'split-window-horizontally)
 (global-set-key [f7] 'split-window-vertically)
 (global-set-key [f8] 'delete-window)
+(global-set-key (kbd "C-x C-j") 'dired-jump)
 (global-set-key "\M-n"  (lambda () (interactive) (scroll-up   1)) )
 (global-set-key "\M-p"  (lambda () (interactive) (scroll-down 1)) )
 (global-set-key "\M-g"  'goto-line)
@@ -174,5 +178,42 @@
   (interactive "p")
   (move-line (if (null n) 1 n)))
 
-(global-set-key (kbd "M-<up>") 'move-line-up)
-(global-set-key (kbd "M-<down>") 'move-line-down)
+;;; disabled, since I rarely use these
+;; (global-set-key (kbd "M-<up>") 'move-line-up)
+;; (global-set-key (kbd "M-<down>") 'move-line-down)
+
+(global-set-key (kbd "<f9>")  ;make F9 switch to *scratch*     
+  (lambda()(interactive)(switch-to-buffer "*scratch*")))
+
+(defun xadam-save-current-directory ()
+  "Save the current directory to the file ~/.emacs.d/adam/current-directory"
+  (interactive)
+  (let ((dir default-directory))
+    (with-current-buffer (find-file-noselect "~/.emacs.d/adam/current-directory")
+      (delete-region (point-min) (point-max))
+      (insert (concat dir "\n"))
+      (save-buffer)
+      (kill-buffer (current-buffer)))))
+(global-set-key [(super f10)] 'xadam-save-current-directory)
+
+;; save a list of open files in ~/.emacs.desktop
+;; save the desktop file automatically if it already exists
+(setq desktop-save 'if-exists)
+(desktop-save-mode 1)
+
+;; save a bunch of variables to the desktop file
+;; for lists specify the len of the maximal saved data also
+(setq desktop-globals-to-save
+      (append '((extended-command-history . 30)
+                (file-name-history        . 100)
+                (grep-history             . 30)
+                (compile-history          . 30)
+                (minibuffer-history       . 50)
+                (query-replace-history    . 60)
+                (read-expression-history  . 60)
+                (regexp-history           . 60)
+                (regexp-search-ring       . 20)
+                (search-ring              . 20)
+                (shell-command-history    . 50)
+                tags-file-name
+                register-alist)))
