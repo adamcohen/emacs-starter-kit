@@ -24,6 +24,8 @@
 
 (make-variable-buffer-local 'yas/trigger-key)
 
+(setq yas/wrap-around-region 'cua)
+
 (require 'ruby-electric)
 (add-hook 'ruby-mode-hook
           (lambda nil

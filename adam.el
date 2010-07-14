@@ -16,7 +16,8 @@
   ido-max-work-file-list      50   ; remember many
   ido-use-filename-at-point nil    ; don't use filename at point (annoying)
   ido-use-url-at-point nil         ; don't use url at point (annoying)
-  ido-enable-flex-matching t       ; don't try to be too smart
+  ido-enable-regexp t              ; use regexp matchin
+  ido-enable-flex-matching f       ; disabled so we can use regexp matching
   ido-max-prospects 8              ; don't spam my minibuffer
   ido-confirm-unique-completion t) ; wait for RET, even with unique completion
 
@@ -219,9 +220,26 @@ n    (forward-line n)
                 register-alist)))
 
 
-(defun log-through-rails ()
+(defun lw ()
   (interactive)
   "insert log message containing clipboard contents"
   (insert  (concat (concat (concat "logger.warn(%|" (car kill-ring)) ": #{") (car kill-ring) "}|)")))
 
-(global-set-key (kbd "C-c C-j") 'log-through-rails)
+(global-set-key (kbd "C-c C-j") 'lw)
+
+(defun clear-shell ()
+   (interactive)
+   (let ((comint-buffer-maximum-size 0))
+     (comint-truncate-buffer)))
+
+;; reclaim some binding used by shell mode and shell-command.
+;; the shell mode and associated mode and commands use keys in comint-mode-map.
+(add-hook 'shell-mode-hook
+ (lambda ()
+   (define-key shell-mode-map (kbd "C-c C-f") 'find-file-at-point)
+))
+
+(defun gf ()
+  (interactive)
+"copy the full path to the current buffer into the clipboard"
+(kill-new buffer-file-name))
