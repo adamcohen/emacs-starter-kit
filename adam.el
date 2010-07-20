@@ -17,7 +17,7 @@
   ido-use-filename-at-point nil    ; don't use filename at point (annoying)
   ido-use-url-at-point nil         ; don't use url at point (annoying)
   ido-enable-regexp t              ; use regexp matchin
-  ido-enable-flex-matching f       ; disabled so we can use regexp matching
+  ido-enable-flex-matching nil     ; disabled so we can use regexp matching
   ido-max-prospects 8              ; don't spam my minibuffer
   ido-confirm-unique-completion t) ; wait for RET, even with unique completion
 
