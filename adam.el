@@ -223,7 +223,8 @@ n    (forward-line n)
 (defun lw ()
   (interactive)
   "insert log message containing clipboard contents"
-  (insert  (concat (concat (concat "logger.warn(%|" (car kill-ring)) ": #{") (car kill-ring) "}|)")))
+  (insert (concat "logger.warn(%|" (car kill-ring) ": #{" (car kill-ring) "}|)"))
+)
 
 (global-set-key (kbd "C-c C-j") 'lw)
 
