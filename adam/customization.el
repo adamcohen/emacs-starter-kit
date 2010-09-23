@@ -65,5 +65,6 @@
 ;; (require 'autopair)
 ;; (autopair-global-mode) ;; enable autopair in all buffers 
 
-(when (require 'browse-kill-ring nil 'noerror)
-  (browse-kill-ring-default-keybindings))
+;;; disable this - don't like the kill ring window that pops up, it's annoying
+;; (when (require 'browse-kill-ring nil 'noerror)
+;;   (browse-kill-ring-default-keybindings))

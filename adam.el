@@ -219,14 +219,23 @@ n    (forward-line n)
                 tags-file-name
                 register-alist)))
 
-
 (defun lw ()
   (interactive)
   "insert log message containing clipboard contents"
-  (insert (concat "logger.warn(%|" (car kill-ring) ": #{" (car kill-ring) "}|)"))
+  (set 'flowers (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)\n"))
+  (insert (concat "logger.warn" flowers))
+  (insert (concat "puts" flowers))
+  )
+
+(defun lp ()
+  (interactive)
+  "insert puts message containing clipboard contents"
+  (set 'flowers (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)"))
+  (insert (concat "puts \"XXXXXXXXXXXXXXXX\", " flowers ", \"XXXXXXXXXXXXXXXX\"\n"))
 )
 
 (global-set-key (kbd "C-c C-j") 'lw)
+(global-set-key (kbd "C-c C-p") 'lp)
 
 (defun clear-shell ()
    (interactive)
@@ -240,7 +249,21 @@ n    (forward-line n)
    (define-key shell-mode-map (kbd "C-c C-f") 'find-file-at-point)
 ))
 
+;; remove P (ibuffer-do-print) in ibuffer mode, since it's
+;; way too easy to print a shitload of buffers!
+(add-hook 'ibuffer-mode-hook
+ (lambda ()
+   (define-key ibuffer-mode-map (kbd "P") 'ibuffer-backward-line)
+))
+
 (defun gf ()
   (interactive)
 "copy the full path to the current buffer into the clipboard"
 (kill-new buffer-file-name))
+
+;; Remove completion buffer when done
+(add-hook 'minibuffer-exit-hook 
+      '(lambda ()
+         (let ((buffer "*Completions*"))
+           (and (get-buffer buffer)
+            (kill-buffer buffer)))))
