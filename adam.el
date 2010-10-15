@@ -222,16 +222,16 @@ n    (forward-line n)
 (defun lw ()
   (interactive)
   "insert log message containing clipboard contents"
-  (set 'flowers (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)\n"))
-  (insert (concat "logger.warn" flowers))
-  (insert (concat "puts" flowers))
+  (set 'logmsg (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)\n"))
+  (insert (concat "logger.debug" logmsg))
+  (insert (concat "puts" logmsg))
   )
 
 (defun lp ()
   (interactive)
   "insert puts message containing clipboard contents"
-  (set 'flowers (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)"))
-  (insert (concat "puts \"XXXXXXXXXXXXXXXX\", " flowers ", \"XXXXXXXXXXXXXXXX\"\n"))
+  (set 'logmsg (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)"))
+  (insert (concat "puts \"XXXXXXXXXXXXXXXX\", " logmsg ", \"XXXXXXXXXXXXXXXX\"\n"))
 )
 
 (global-set-key (kbd "C-c C-j") 'lw)
@@ -267,3 +267,34 @@ n    (forward-line n)
          (let ((buffer "*Completions*"))
            (and (get-buffer buffer)
             (kill-buffer buffer)))))
+
+;; originally from http://sites.google.com/site/steveyegge2/my-dot-emacs-file
+;; adapted from http://stackoverflow.com/questions/384284/can-i-rename-an-open-file-in-emacs
+;; to support moving to a new directory
+(defun rename-file-and-buffer (new-name)
+  "Renames both current buffer and file it's visiting to NEW-NAME."
+  (interactive
+   (progn
+     (if (not (buffer-file-name))
+         (error "Buffer '%s' is not visiting a file!" (buffer-name)))
+     (list (read-file-name (format "Rename %s to: " (file-name-nondirectory
+                                                     (buffer-file-name)))))))
+  (if (equal new-name "")
+      (error "Aborted rename"))
+  (setq new-name (if (file-directory-p new-name)
+                     (expand-file-name (file-name-nondirectory
+                                        (buffer-file-name))
+                                       new-name)
+                   (expand-file-name new-name)))
+  ;; If the file isn't saved yet, skip the file rename, but still update the
+  ;; buffer name and visited file.
+  (if (file-exists-p (buffer-file-name))
+      (rename-file (buffer-file-name) new-name 1))
+  (let ((was-modified (buffer-modified-p)))
+    ;; This also renames the buffer, and works with uniquify
+    (set-visited-file-name new-name)
+    (if was-modified
+        (save-buffer)
+      ;; Clear buffer-modified flag caused by set-visited-file-name
+      (set-buffer-modified-p nil))
+  (message "Renamed to %s." new-name)))
