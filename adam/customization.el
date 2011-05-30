@@ -34,6 +34,10 @@
 
 (color-theme-clarity)
 
+(add-hook 'html-mode-hook
+          (lambda nil
+            (auto-fill-mode -1)))
+
 ;(add-to-list 'load-path "~/.emacs.d/cucumber.el/")
 
 ;; and load it
@@ -60,6 +64,7 @@
 
 (add-to-list 'load-path "~/.emacs.d/adam/ecb-2.40/")
 (require 'ecb)
+(setq ecb-tip-of-the-day nil)
 
 ;; (add-to-list 'load-path "~/.emacs.d/adam/autopair.el") ;; comment if autopair.el is in standard load path 
 ;; (require 'autopair)
