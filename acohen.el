@@ -223,7 +223,7 @@ n    (forward-line n)
   (interactive)
   "insert log message containing clipboard contents"
   (set 'logmsg (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)\n"))
-  (insert (concat "logger.debug" logmsg))
+  (insert (concat "RAILS_DEFAULT_LOGGER.debug" logmsg))
   (insert (concat "puts" logmsg))
   )
 
