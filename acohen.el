@@ -186,16 +186,16 @@ n    (forward-line n)
 (global-set-key (kbd "<f9>")  ;make F9 switch to *scratch*     
   (lambda()(interactive)(switch-to-buffer "*scratch*")))
 
-(defun xadam-save-current-directory ()
-  "Save the current directory to the file ~/.emacs.d/adam/current-directory"
+(defun xacohen-save-current-directory ()
+  "Save the current directory to the file ~/.emacs.d/acohen/current-directory"
   (interactive)
   (let ((dir default-directory))
-    (with-current-buffer (find-file-noselect "~/.emacs.d/adam/current-directory")
+    (with-current-buffer (find-file-noselect "~/.emacs.d/acohen/current-directory")
       (delete-region (point-min) (point-max))
       (insert (concat dir "\n"))
       (save-buffer)
       (kill-buffer (current-buffer)))))
-(global-set-key [(super f10)] 'xadam-save-current-directory)
+(global-set-key [(super f10)] 'xacohen-save-current-directory)
 
 ;; save a list of open files in ~/.emacs.desktop
 ;; save the desktop file automatically if it already exists

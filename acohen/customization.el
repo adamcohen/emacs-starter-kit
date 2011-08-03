@@ -1,5 +1,5 @@
 (add-to-list 'load-path 
-   (concat dotfiles-dir "adam/yasnippets-rails"))
+   (concat dotfiles-dir "acohen/yasnippets-rails"))
 
 (add-hook 'ruby-mode-hook ; or rails-minor-mode-hook ?
           '(lambda ()
@@ -12,15 +12,15 @@
 
 (yas/initialize)
 (setq yas/window-system-popup-function 'yas/x-popup-menu-for-template)
-;(yas/load-directory (concat dotfiles-dir "adam/yasnippet/snippets"))
+;(yas/load-directory (concat dotfiles-dir "acohen/yasnippet/snippets"))
 
 (yas/load-directory 
    (concat 
-      dotfiles-dir "adam/yasnippets-rails/rails-snippets/"))
+      dotfiles-dir "acohen/yasnippets-rails/rails-snippets/"))
 
 (yas/load-directory 
    (concat 
-      dotfiles-dir "adam/yasnippets-rails/cucumber-snippets/"))
+      dotfiles-dir "acohen/yasnippets-rails/cucumber-snippets/"))
 
 (make-variable-buffer-local 'yas/trigger-key)
 
@@ -57,16 +57,16 @@
 (define-key ruby-mode-map (kbd "TAB") nil)
 
 ;;; CEDET stuff
-(load-file "~/.emacs.d/adam/cedet-1.0pre7/common/cedet.el")
+(load-file "~/.emacs.d/acohen/cedet-1.0pre7/common/cedet.el")
 (global-ede-mode 1)                      ; Enable the Project management system
 (semantic-load-enable-code-helpers)      ; Enable prototype help and smart completion 
 (global-srecode-minor-mode 1)            ; Enable template insertion menu
 
-(add-to-list 'load-path "~/.emacs.d/adam/ecb-2.40/")
+(add-to-list 'load-path "~/.emacs.d/acohen/ecb-2.40/")
 (require 'ecb)
 (setq ecb-tip-of-the-day nil)
 
-;; (add-to-list 'load-path "~/.emacs.d/adam/autopair.el") ;; comment if autopair.el is in standard load path 
+;; (add-to-list 'load-path "~/.emacs.d/acohen/autopair.el") ;; comment if autopair.el is in standard load path 
 ;; (require 'autopair)
 ;; (autopair-global-mode) ;; enable autopair in all buffers 
 
