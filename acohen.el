@@ -5,6 +5,10 @@
 (remove-hook 'kill-buffer-query-functions 'server-kill-buffer-query-function)
 
 (setq 
+  tags-revert-without-query 1      ; automatically reload the TAGS
+                                   ; table if it changes
+  ;; when using ido, the confirmation is rather annoying...
+  confirm-nonexistent-file-or-buffer nil
   ido-save-directory-list-file "~/.emacs.d/cache/ido.last"
   ido-ignore-buffers ;; ignore these guys
   '("\\` " "^\*Mess" "^\*Back" ".*Completion" "^\*Ido" "^\*trace"
@@ -21,8 +25,10 @@
   ido-max-prospects 8              ; don't spam my minibuffer
   ido-confirm-unique-completion t) ; wait for RET, even with unique completion
 
-;; when using ido, the confirmation is rather annoying...
- (setq confirm-nonexistent-file-or-buffer nil)
+;;; SET DEFAULT FONT SIZE/HEIGHT
+; (set-face-attribute 'default nil :font "DejaVu Sans Mono-12")
+(set-face-attribute 'default nil :height 123)
+
 
 ;; increase minibuffer size when ido completion is active
 (add-hook 'ido-minibuffer-setup-hook 
@@ -298,3 +304,88 @@ n    (forward-line n)
       ;; Clear buffer-modified flag caused by set-visited-file-name
       (set-buffer-modified-p nil))
   (message "Renamed to %s." new-name)))
+
+ (defun my-ido-project-files ()
+      "Use ido to select a file from the project."
+      (interactive)
+      (let (my-project-root project-files tbl)
+      (unless project-details (project-root-fetch))
+      (setq my-project-root (cdr project-details))
+      ;; get project files
+      (setq project-files 
+	    (split-string 
+	     (shell-command-to-string 
+	      (concat "find "
+		      my-project-root
+		      " \\( -name \"*.svn\" -o -name \"*.git\" \\) -prune -o -type f -print | grep -E -v \"\.(pyc)$\""
+		      )) "\n"))
+      ;; populate hash table (display repr => path)
+      (setq tbl (make-hash-table :test 'equal))
+      (let (ido-list)
+      (mapc (lambda (path)
+	      ;; format path for display in ido list
+	      (setq key (replace-regexp-in-string "\\(.*?\\)\\([^/]+?\\)$" "\\2|\\1" path))
+	      ;; strip project root
+	      (setq key (replace-regexp-in-string my-project-root "" key))
+	      ;; remove trailing | or /
+	      (setq key (replace-regexp-in-string "\\(|\\|/\\)$" "" key))
+	      (puthash key path tbl)
+	      (push key ido-list)
+	      )
+	    project-files
+	    )
+      (find-file (gethash (ido-completing-read "project-files: " ido-list) tbl)))))
+    ;; bind to a key for quick access
+    (define-key global-map [f6] 'my-ido-project-files)
+
+;; I know that string is in my Emacs somewhere!
+(defcustom search-all-buffers-ignored-files (list (rx-to-string '(and bos (or ".bash_history" "TAGS") eos)))
+  "Files to ignore when searching buffers via \\[search-all-buffers]."
+  :type 'editable-list)
+
+(require 'grep)
+(defun search-all-buffers (regexp prefix)
+  "Searches file-visiting buffers for occurence of REGEXP.  With
+prefix > 1 (i.e., if you type C-u \\[search-all-buffers]),
+searches all buffers."
+  (interactive (list (grep-read-regexp)
+                     current-prefix-arg))
+  (message "Regexp is %s; prefix is %s" regexp prefix)
+  (multi-occur
+   (if (member prefix '(4 (4)))
+       (buffer-list)
+     (remove-if
+      (lambda (b) (some (lambda (rx) (string-match rx  (file-name-nondirectory (buffer-file-name b)))) search-all-buffers-ignored-files))
+      (remove-if-not 'buffer-file-name (buffer-list))))
+
+   regexp))
+
+(global-set-key [f7] 'search-all-buffers)
+
+(defun my-ido-find-tag ()
+    "Find a tag using ido"
+    (interactive)
+    (tags-completion-table)
+    (let (tag-names)
+      (mapc (lambda (x)
+              (unless (integerp x)
+                (push (prin1-to-string x t) tag-names)))
+            tags-completion-table)
+      (find-tag (ido-completing-read "Tag: " tag-names))))
+
+(defun ido-find-file-in-tag-files ()
+      (interactive)
+      (save-excursion
+        (let ((enable-recursive-minibuffers t))
+          (visit-tags-table-buffer))
+        (find-file
+         (expand-file-name
+          (ido-completing-read
+           "Project file: " (tags-table-files) nil t)))))
+
+(global-set-key [f8] 'ido-find-file-in-tag-files)
+
+  ;; Display ido results vertically, rather than horizontally
+  (setq ido-decorations (quote ("\n-> " "" "\n   " "\n   ..." "[" "]" " [No match]" " [Matched]" " [Not readable]" " [Too big]" " [Confirm]")))
+  (defun ido-disable-line-trucation () (set (make-local-variable 'truncate-lines) nil))
+  (add-hook 'ido-minibuffer-setup-hook 'ido-disable-line-trucation)
