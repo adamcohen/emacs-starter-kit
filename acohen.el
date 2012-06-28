@@ -25,6 +25,10 @@
   ido-max-prospects 8              ; don't spam my minibuffer
   ido-confirm-unique-completion t) ; wait for RET, even with unique completion
 
+; enable tramp to open files using sudo on a remote machine by
+; doing C-x C-f /sudo:root@host[#port]:/path/to/file
+(set-default 'tramp-default-proxies-alist (quote ((".*" "\\`root\\'" "/ssh:%h:"))))
+
 ;;; SET DEFAULT FONT SIZE/HEIGHT
 ; (set-face-attribute 'default nil :font "DejaVu Sans Mono-12")
 (set-face-attribute 'default nil :height 123)
@@ -225,10 +229,22 @@ n    (forward-line n)
                 tags-file-name
                 register-alist)))
 
+;;; by default, desktop mode only saves when you cleanly exit emacs.
+;;; We want to autosave the desktop file whenever emacs is idle, so we
+;;; use the following
+  (defun my-desktop-save ()
+    (interactive)
+    ;; Don't call desktop-save-in-desktop-dir, as it prints a message.
+            (desktop-save desktop-dirname))
+  (add-hook 'auto-save-hook 'my-desktop-save)
+
 (defun lw ()
   (interactive)
   "insert log message containing clipboard contents"
-  (set 'logmsg (concat "(%|" ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}|)\n"))
+  (set 'logmsg (concat "(%|\\n\\n[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]\\n"))
+  (set 'logmsg (concat logmsg (concat "[" (car (last (split-string buffer-file-name "/"))) "]\\n")))
+  (set 'logmsg (concat logmsg ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}\\n"))
+  (set 'logmsg (concat logmsg "[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]\\n\\n|)" "\n"))
   (insert (concat "RAILS_DEFAULT_LOGGER.debug" logmsg))
   (insert (concat "puts" logmsg))
   )
@@ -266,6 +282,11 @@ n    (forward-line n)
   (interactive)
 "copy the full path to the current buffer into the clipboard"
 (kill-new buffer-file-name))
+
+(defun gff ()
+  (interactive)
+"copy the relative path to the current buffer into the clipboard"
+(kill-new (replace-regexp-in-string "/home/acohen/.*?/" "" buffer-file-name)))
 
 ;; Remove completion buffer when done
 (add-hook 'minibuffer-exit-hook 
@@ -389,3 +410,136 @@ searches all buffers."
   (setq ido-decorations (quote ("\n-> " "" "\n   " "\n   ..." "[" "]" " [No match]" " [Matched]" " [Not readable]" " [Too big]" " [Confirm]")))
   (defun ido-disable-line-trucation () (set (make-local-variable 'truncate-lines) nil))
   (add-hook 'ido-minibuffer-setup-hook 'ido-disable-line-trucation)
+
+(defvar my-local-shells
+  '("*shell0*" "*shell1*" "*shell2*" "*shell3*"))
+
+(defvar my-shells (append my-local-shells))
+
+(custom-set-variables
+ '(comint-scroll-to-bottom-on-input t)  ; always insert at the bottom
+ '(comint-scroll-to-bottom-on-output nil) ; always add output at the bottom
+ '(comint-scroll-show-maximum-output t) ; scroll to show max possible output
+ ;; '(comint-completion-autolist t)     ; show completion list when ambiguous
+ '(comint-input-ignoredups t)           ; no duplicates in command history
+ '(comint-completion-addsuffix t)       ; insert space/slash after file completion
+ '(comint-buffer-maximum-size 1000)    ; max length of the buffer in lines
+ '(comint-prompt-read-only nil)         ; if this is t, it breaks shell-command
+ '(comint-get-old-input (lambda () "")) ; what to run when i press enter on a
+                                        ; line above the current prompt
+ '(comint-input-ring-size 5000)         ; max shell history size
+ '(protect-buffer-bury-p nil)
+)
+
+(setenv "PAGER" "cat")
+
+;; truncate buffers continuously
+(add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
+
+(defun make-my-shell-output-read-only (text)
+  "Add to comint-output-filter-functions to make stdout read only in my shells."
+  (if (member (buffer-name) my-shells)
+      (let ((inhibit-read-only t)
+            (output-end (process-mark (get-buffer-process (current-buffer)))))
+        (put-text-property comint-last-output-start output-end 'read-only t))))
+(add-hook 'comint-output-filter-functions 'make-my-shell-output-read-only)
+
+(defun my-dirtrack-mode ()
+  "Add to shell-mode-hook to use dirtrack mode in my shell buffers."
+  (when (member (buffer-name) my-shells)
+    (shell-dirtrack-mode 0)
+    (set-variable 'dirtrack-list '("^.*[^ ]+:\\(.*\\)>" 1 nil))
+    (dirtrack-mode 1)))
+(add-hook 'shell-mode-hook 'my-dirtrack-mode)
+
+; interpret and use ansi color codes in shell output windows
+(add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+
+(defun set-scroll-conservatively ()
+  "Add to shell-mode-hook to prevent jump-scrolling on newlines in shell buffers."
+  (set (make-local-variable 'scroll-conservatively) 10))
+(add-hook 'shell-mode-hook 'set-scroll-conservatively)
+
+(defun enter-again-if-enter ()
+  "Make the return key select the current item in minibuf and shell history isearch.
+An alternate approach would be after-advice on isearch-other-meta-char."
+  (when (and (not isearch-mode-end-hook-quit)
+             (equal (this-command-keys-vector) [13])) ; == return
+    (cond ((active-minibuffer-window) (minibuffer-complete-and-exit))
+          ((member (buffer-name) my-shells) (comint-send-input)))))
+(add-hook 'isearch-mode-end-hook 'enter-again-if-enter)
+
+(defadvice comint-previous-matching-input
+    (around suppress-history-item-messages activate)
+  "Suppress the annoying 'History item : NNN' messages from shell history isearch.
+If this isn't enough, try the same thing with
+comint-replace-by-expanded-history-before-point."
+  (let ((old-message (symbol-function 'message)))
+    (unwind-protect
+      (progn (fset 'message 'ignore) ad-do-it)
+    (fset 'message old-message))))
+
+(defadvice comint-send-input (around go-to-end-of-multiline activate)
+  "When I press enter, jump to the end of the *buffer*, instead of the end of
+the line, to capture multiline input. (This only has effect if
+`comint-eol-on-send' is non-nil."
+  (flet ((end-of-line () (end-of-buffer)))
+    ad-do-it))
+
+;if a file is already open in read only mode, use this to re-open the
+;file with sudo access
+(defun find-alternative-file-with-sudo ()
+  (interactive)
+  (let ((fname (or buffer-file-name
+		   dired-directory)))
+    (when fname
+      (if (string-match "^/sudo:root@localhost:" fname)
+	  (setq fname (replace-regexp-in-string
+		       "^/sudo:root@localhost:" ""
+		       fname))
+	(setq fname (concat "/sudo:root@localhost:" fname)))
+      (find-alternate-file fname))))
+
+;;; THIS STUFF BELOW DOESN'T WORK - TODO: SEND A MESSAGE TO EMACS LIST
+;; TO FIND OUT WHY THE LONGER VERSION DOESN'T DISPLAY ANYTHING
+;; (defun vc-git-annotate-command (file buffer &optional revision)
+;;   "Prepare BUFFER for `vc-annotate' on FILE.
+;; Each line is tagged with the revision number, which has a `help-echo'
+;; property containing author and date information."
+;;   (apply #'vc-git-command buffer 'async nil "blame" "--date=iso" "-C" "-C" revision "--" (file-relative-name file)
+;;          (if revision (list "-r" revision)))
+;;   (lexical-let ((table (make-hash-table :test 'equal)))
+;;     (set-process-filter
+;;      (get-buffer-process buffer)
+;;      (lambda (proc string)
+;;        (when (process-buffer proc)
+;;          (with-current-buffer (process-buffer proc)
+;;            (setq string (concat (process-get proc :vc-left-over) string))
+;;            (while (string-match "^\\([0-9a-z]+\\) \\(.+?\\) (\\(.+?\\) + \\(.\\{25\\}\\) +\\([0-9]+\\)) +\\(.*\\)$" string)
+;;              (let* ((rev (match-string 1 string))
+;;                     (path (match-string 2 string))
+;;                     (author (match-string 3 string))
+;;                     (date (match-string 4 string))
+;;                     (key (substring string (match-beginning 0)
+;;                                     (match-beginning 4)))
+;;                     (line (match-string 5 string))
+;;                     (tag (gethash key table))
+;;                     (inhibit-read-only t))
+;;                (setq string (substring string (match-end 0)))
+;; 	       (unless tag
+;; 		 (setq tag
+;; 		       (propertize
+;; 			(format "%s %-7.7s" rev author)
+;; 			'help-echo (format "Revision: %d, author: %s, date: %s"
+;; 					   (string-to-number rev)
+;; 					   author date)
+;; 			'mouse-face 'highlight))
+;;                  (puthash key tag table))
+;;                (goto-char (process-mark proc))
+;;                (insert tag line)
+;;                (move-marker (process-mark proc) (point))))
+;;            (process-put proc :vc-left-over string)))))))
+
+;; (defun vc-git-annotate-command (file buf &optional rev)
+;;   (let ((name (file-relative-name file)))
+;;     (vc-git-command buf 'async nil "blame" "--date=iso" "-C" "-C" rev "--" name)))
