@@ -89,13 +89,15 @@
 
 (add-hook 'ruby-mode-hook
           '(lambda ()
-;;; I don't like the way paredit handles ruby sexp
+
+;;; remove some of the annoying parts of paredit
 (define-key paredit-mode-map (kbd "M-C-a") 'ruby-beginning-of-defun)
 (define-key paredit-mode-map (kbd "M-C-e") 'ruby-end-of-defun)
 (define-key paredit-mode-map (kbd "M-C-b") 'ruby-backward-sexp)
 (define-key paredit-mode-map (kbd "M-C-f") 'ruby-forward-sexp)
 (define-key paredit-mode-map (kbd "M-C-p") 'ruby-beginning-of-block)
 (define-key paredit-mode-map (kbd "M-C-n") 'ruby-end-of-block)
+(define-key paredit-mode-map (kbd "M-;") 'comment-dwim)
 (define-key paredit-mode-map (kbd "<backspace>") 'delete-backward-char)
 ))
 

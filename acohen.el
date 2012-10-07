@@ -8,6 +8,7 @@
   tags-revert-without-query 1      ; automatically reload the TAGS
                                    ; table if it changes
   ;; when using ido, the confirmation is rather annoying...
+  warning-suppress-types nil
   confirm-nonexistent-file-or-buffer nil
   ido-save-directory-list-file "~/.emacs.d/cache/ido.last"
   ido-ignore-buffers ;; ignore these guys
@@ -245,7 +246,7 @@ n    (forward-line n)
   (set 'logmsg (concat logmsg (concat "[" (car (last (split-string buffer-file-name "/"))) "]\\n")))
   (set 'logmsg (concat logmsg ( upcase (car kill-ring)) ": #{" (car kill-ring) ".inspect}\\n"))
   (set 'logmsg (concat logmsg "[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]\\n\\n|)" "\n"))
-  (insert (concat "RAILS_DEFAULT_LOGGER.debug" logmsg))
+  (insert (concat "Rails.logger.debug" logmsg))
   (insert (concat "puts" logmsg))
   )
 
@@ -269,6 +270,7 @@ n    (forward-line n)
 (add-hook 'shell-mode-hook
  (lambda ()
    (define-key shell-mode-map (kbd "C-c C-f") 'find-file-at-point)
+   (define-key shell-mode-map [f1] 'clear-shell)
 ))
 
 ;; remove P (ibuffer-do-print) in ibuffer mode, since it's
