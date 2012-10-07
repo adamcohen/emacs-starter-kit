@@ -177,7 +177,7 @@ Symbols matching the text at point are put first in the completion list."
   (load autoload-file))
 
 (defun sudo-edit (&optional arg)
-  (interactive "p")
+  (interactive "P")
   (if (or arg (not buffer-file-name))
       (find-file (concat "/sudo:root@localhost:" (ido-read-file-name "File: ")))
     (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
@@ -218,7 +218,7 @@ Symbols matching the text at point are put first in the completion list."
   (paredit-mode 1))
 
 (defun esk-space-for-delimiter? (endp delimiter)
-  (not (member major-mode '(ruby-mode espresso-mode js2-mode))))
+  (not (member major-mode '(ruby-mode espresso-mode js-mode js2-mode))))
 
 (eval-after-load 'paredit
   '(add-to-list 'paredit-space-for-delimiter-predicates
